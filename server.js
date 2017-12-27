@@ -16,6 +16,12 @@ mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
+app.use(express.static('public'));
+
+app.get("/api", function (request, response) {
+  response.sendFile(__dirname + '/views/index.html');
+});
+
 app.get("/api/search/:query", (req, res) => {  
   // get image data
   let page = req.query.offset ? req.query.offset : 1
