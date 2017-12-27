@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 
 const QuerySchema = new Schema({
   query: String,
-  date: Date
+  date: Date,
+  url: String
 })
 
 module.exports = mongoose.model('QueryModel', QuerySchema);

@@ -24,30 +24,43 @@ var db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-app.get("/api/search/:query", (request, response) => {
-  console.log(request.originalUrl);
-  
-
+app.get("/api/search/:query", (req, res) => {  
   // get image data
-  client.search('lolcat funny')
-    .then(images => {
-      response.send(images)
-  })
-  // save query info into db
-  var query = new Query({query: 'test', date: Date.now()});
-  query.save((err) => {
-    if(err) {
-      console.log(err)
-       return
-    }
-  });
+  let images = []
+  client
+    .search(req.params.query)
+    .then(data => {
+      data.forEach(i => {
+        // construct result object by selection only relevant object keys
+        let { url:imageUrl, description:altText, parentPage:pageUrl, thumbnail: { url:thumbnail } } = i
+        images.push({'imageUrl': imageUrl, 'altText': altText, 'pageUrl': pageUrl, 'thumbnail': thumbnail})
+      });
+    
+      // save query info into db for /latest endpoint
+      var fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      var query = new Query({query: req.params.query, date: Date.now(), url: fullUrl});
+      query.save((err) => {
+        if(err) {
+          console.log(err)
+          res.send(err)
+        }
+      });
+      res.send(images)
+    })
+    .catch(reason => {
+      res.json({'result': 'error', 'reason': reason})
+    })
+  
 });
 
-app.get("/api/latest", (request, response) => {
-  Query.find((err, queries) => {
-    if(err) response.json([]);
-    response.json(queries)
-  })
+app.get("/api/latest", (req, res) => {
+  Query.find()
+    .sort({'date': -1})
+    .limit(10)
+    .exec((err, queries) => {
+      if(err) res.json([]);
+      res.json(queries)
+    })
 });
 
 // listen for requests :)
