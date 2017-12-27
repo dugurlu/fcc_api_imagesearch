@@ -14,6 +14,9 @@ var mongoose = require('mongoose')
 var assert = require('assert')
 var Query = require('./schema');
 
+const GoogleImages = require('google-images');
+const client = new GoogleImages(process.env.API_ID, process.env.API_KEY);
+
 var url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`
 mongoose.connect(url, {useMongoClient: true});
 mongoose.Promise = global.Promise;
@@ -21,38 +24,31 @@ var db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
+app.get("/api/search/:query", (request, response) => {
+  console.log(request.originalUrl);
+  
 
-// we've started you off with Express, 
-// but feel free to use whatever libs or frameworks you'd like through `package.json`.
-
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
-
-// http://expressjs.com/en/starter/basic-routing.html
-// app.get("/", function (request, response) {
-//   response.sendFile(__dirname + '/views/index.html');
-// });
-
-app.get("/api", function (request, response) {
+  // get image data
+  client.search('lolcat funny')
+    .then(images => {
+      response.send(images)
+  })
+  // save query info into db
   var query = new Query({query: 'test', date: Date.now()});
   query.save((err) => {
     if(err) {
       console.log(err)
        return
     }
-    response.send(query);
   });
 });
 
-// app.get("/dreams", function (request, response) {
-//   response.send(dreams);
-// });
-
-// could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
-// app.post("/dreams", function (request, response) {
-//   dreams.push(request.query.dream);
-//   response.sendStatus(200);
-// });
+app.get("/api/latest", (request, response) => {
+  Query.find((err, queries) => {
+    if(err) response.json([]);
+    response.json(queries)
+  })
+});
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {

@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "express": "^4.16.2",
-    "mongoose": "^4.13.7"
+    "mongoose": "^4.13.7",
+    "google-images": "^2.1.0"
   },
   "engines": {
     "node": "8.x"
